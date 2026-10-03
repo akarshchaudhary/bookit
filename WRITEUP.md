@@ -1,5 +1,7 @@
 # WRITEUP — Seat Reservation at Scale
 
+Repo: `https://github.com/akarshchaudhary/bookit` · Live: `https://api-production-b79e8.up.railway.app`
+
 ## Atomic decision
 
 The system of record is PostgreSQL. On reserve:
