@@ -1,0 +1,74 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 10000
+    max-connections: 20000
+
+spring:
+  application:
+    name: seat-reservation
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/seats}
+    username: ${DATABASE_USERNAME:seats}
+    password: ${DATABASE_PASSWORD:seats}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      # Queue for a connection rather than fail fast: under a burst, waiting is
+      # the correct outcome, a 5xx is not.
+      connection-timeout: 60000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+
+app:
+  admin-token: ${ADMIN_TOKEN:admin-secret-token}
+  # Bounds how many reserve transactions hold row locks at once; the rest queue
+  # in arrival order instead of piling onto the connection pool.
+  reserve-concurrency: ${APP_RESERVE_CONCURRENCY:8}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+      base-path: /
+      path-mapping:
+        prometheus: metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+    prometheus:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} level=%level request_id=%X{request_id} logger=%logger{36} msg=\"%msg\"%n"

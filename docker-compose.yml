@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: seats
+      POSTGRES_USER: seats
+      POSTGRES_PASSWORD: seats
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seats -d seats"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/seats
+      DATABASE_USERNAME: seats
+      DATABASE_PASSWORD: seats
+      ADMIN_TOKEN: admin-secret-token
+      DB_POOL_SIZE: "10"
+    depends_on:
+      db:
+        condition: service_healthy
