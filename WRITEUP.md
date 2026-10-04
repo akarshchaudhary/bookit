@@ -55,6 +55,7 @@ Prefer consistency. If Postgres is unreachable, `/readyz` fails closed and the p
 | Item | Value |
 |------|-------|
 | Live URL | `https://api-production-b79e8.up.railway.app` (Railway `api` + Postgres, cold start ~25s) |
+| Burst video | `https://drive.google.com/file/d/1s0pVOCd98MB1lXATVgvZtXEGiGwBXkJD/view?usp=sharing` (live hot-seat run: 1×201, rest 409, 0×5xx, PASS + Railway log stream) |
 | Live verify | `GET /readyz` → `{"status":"UP"}`; `.\burst.ps1 https://api-production-b79e8.up.railway.app` → `confirmed(201): 1, declined(4xx): 49, server(5xx): 0`, `available=19 held=0 confirmed=1 total=20` PASS |
 | Metrics | `GET /metrics`: `reservations_confirmed_total`, `reservations_declined_total{reason}`, `reservations_cancelled_total`, `seats_available` — reconciled live (confirmed=1, replay=2, conflict=1 after smoke) |
 | Logs | Railway `api` → Logs / Deployments, filter `request_id=`; `reserve outcome=confirmed|seat_taken|per_user_limit|idempotent_replay|idempotent_conflict` per request |
@@ -67,3 +68,9 @@ Prefer consistency. If Postgres is unreachable, `/readyz` fails closed and the p
 3. Confirm `GET /readyz` → 200 after cold start.  
 4. Run `./burst.sh https://<live-host>` and confirm exactly one hot-seat `201`, zero `5xx`, invariant holds.  
 5. Replace the Live URL row above with the real URL.
+
+### Railway DB auth gotcha (hit live)
+
+Symptom: `flywayInitializer` fails with `FATAL: password authentication failed for user "seats"`.
+Cause: `application.yml` defaults `DATABASE_USERNAME/PASSWORD` to `seats/seats`, so the Railway Postgres password never applied — `DataSourceConfig` only extracts credentials from `DATABASE_URL` when those properties are unset.
+Fix (no code change): in the `api` service add references `DATABASE_USERNAME → Postgres.PGUSER` and `DATABASE_PASSWORD → Postgres.PGPASSWORD` (plus `DATABASE_URL → Postgres.DATABASE_URL`), then Deploy.
